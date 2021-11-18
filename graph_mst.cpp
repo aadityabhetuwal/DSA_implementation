@@ -5,28 +5,10 @@
 #include <algorithm>
 #include <map>
 #include <set>
-#include <list>
-#include <unordered_set>
 #include <queue>
-#include <functional>
 #include <utility>
 
-#define ll long long
-#define ull unsigned long long long
-
 using namespace std;
-
-// template <typename T>
-// struct Node{
-
-//     T value;
-//     Node* next;
-
-//     Node(T data) : value(data), next(nullptr) { }
-
-//     Node() { }
-// };
-
 
 template<typename T>
 struct VertexEdgePair {
@@ -50,9 +32,10 @@ bool cmp(VertexEdgePair<T>& p1, VertexEdgePair<T>& p2) {
         return p1.vertex < p2.vertex;
     return p1.weight < p2.weight;
 }
-
+ 
+// comparision function for priority queue
 template <typename T>
-struct compare_VertexEdgePair{
+struct cmp_VEP{
     bool operator() (VertexEdgePair<T>& p1, VertexEdgePair<T>& p2) {
         if (p1.weight == p2.weight)
             return p1.vertex > p2.vertex;
@@ -170,6 +153,7 @@ public:
         cout << '\n';
     }
 
+    // Kruskal's Algorithm
 
     void kruskals() {
         int min_cost = 0;
@@ -202,7 +186,8 @@ public:
 
         cout << "MInimum Spanning tree according to Kruskals algorithm has cost = " << min_cost << "\n\n";
     }
-    
+
+    // Prim's algorithm
     void prims(T ver){       
         typedef VertexEdgePair<T> VEP;
         VEP low_wt;
@@ -211,7 +196,7 @@ public:
         bool flag = 0;
 
 
-        priority_queue<VEP, vector<VEP>, compare_VertexEdgePair<T> > qu;
+        priority_queue<VEP, vector<VEP>, cmp_VEP<T> > qu;
 
         qu.emplace(ver, ver, 0);
 
@@ -280,8 +265,6 @@ int main() {
     gh.add_edge(6, 8, 6);
     gh.add_edge(6, 7, 1);
     gh.add_edge(7, 8, 7);
-
-
 
     gh.print_graph_representation();
     cout << "-------------------------\nApplying Kruskals algorithm on graph : \n";
