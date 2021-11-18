@@ -8,6 +8,7 @@
 #include <list>
 #include <unordered_set>
 #include <queue>
+#include <functional>
 #include <utility>
 
 #define ll long long
@@ -43,12 +44,21 @@ struct VertexEdgePair {
 
 };
 
-template <typename T>
+template<typename T>
 bool cmp(VertexEdgePair<T>& p1, VertexEdgePair<T>& p2) {
-
     if (p1.weight == p2.weight)
         return p1.vertex < p2.vertex;
     return p1.weight < p2.weight;
+}
+
+template <typename T>
+struct compare_VertexEdgePair{
+    bool operator() (VertexEdgePair<T>& p1, VertexEdgePair<T>& p2) {
+        if (p1.weight == p2.weight)
+            return p1.vertex > p2.vertex;
+        return p1.weight > p2.weight;
+
+    }
 };
 
 template <typename T>
@@ -70,7 +80,7 @@ struct DisjointSet{
             rank[i] = 0;
 
             // every element is parent of itself
-            parent[i] = i + 'A';
+            parent[i] = i;
         }
     }
 
@@ -107,65 +117,52 @@ struct DisjointSet{
     }
 };
 
+
 template <typename T>
 class Graph {
-
-
     int sz;
     // vector<Node<T>*> lists; // to hold rear elements of heads
     // vector<Node<T>*> heads;
 
-    map<T, list<pair<T, T>> > heads;
+    map<T, vector<pair<T, int>> > heads;
 
     vector<vector<int>> adjacency_matrix;
     unordered_map<T, bool> visited;
-    // typename list<T>::iterator it;
 
-    // we need a priority queue to get the next smallest weight that is not connected 
-    // or we can make a heap
+    // we need a list to hold all vertex edge pairs
     vector<VertexEdgePair<T>> weights;
 
 public:
 
-
     Graph() : sz(0) { }
 
-    // n nodes/ vertices
-    Graph(int v, vector<T>& vertices) {
-        sz = v;
-        pair<T, T> tmp;
-
-        for (int i = 0; i < sz; i++) {
-            tmp = { vertices[i], 0 };
-            heads[vertices[i]].push_back(tmp);
-        }
-
-    }
-
-    // cout << typeof(Graph) << '\n';
 
     void add_edge(T ver, T edge, int weight) {
 
         VertexEdgePair<T> pr = { ver, edge, weight };
-        pair<T, T> tmp = { edge, weight };
 
         weights.push_back(pr);
 
-        heads[ver].push_back(tmp);
-        heads[edge].push_back(tmp);
+        if(heads.find(ver) == heads.end())
+            sz++;
+        
+        if(heads.find(edge) == heads.end())
+            sz++;
+        
+        heads[ver].emplace_back( edge, weight);
+        heads[edge].emplace_back(ver, weight);
 
         return;
     }
 
     void print_graph_representation() {
-        list<pair<T, T>> tmp;
 
         cout << "\nThe adjacency link list representation of graph is :: \n";
-        for (pair<T, list<pair<T, T>> > key : heads) {
-            tmp = key.second;
+        for (pair<T, vector<pair<T, int>> > key : heads) {
+            cout << key.first << " -> ";
 
-            for (auto it = tmp.begin(); it != tmp.end(); it++) {
-                cout << it->first << " -> ";
+            for (pair<T, int> it : key.second) {
+                cout << it.first << " -> ";
             }
             cout << " NULL \n";
 
@@ -177,10 +174,10 @@ public:
     void kruskals() {
         int min_cost = 0;
 
-        sort(weights.begin(), weights.end(), cmp<T>);
+        sort(weights.begin(), weights.end(), cmp<T> );
 
         //create disjoint sets
-        DisjointSet<char> sets(sz);
+        DisjointSet<T> sets(sz);
         
         T u, v;
         T set_u, set_v;
@@ -203,37 +200,97 @@ public:
             }
         }
 
-        cout << "Minimum cost tree has traversal cost = " << min_cost << '\n';
+        cout << "MInimum Spanning tree according to Kruskals algorithm has cost = " << min_cost << "\n\n";
     }
+    
+    void prims(T ver){       
+        typedef VertexEdgePair<T> VEP;
+        VEP low_wt;
+        int min_cost = 0;
+        T y;
+        bool flag = 0;
 
 
-    void prims(){
-        // create a multiset for easier solving
+        priority_queue<VEP, vector<VEP>, compare_VertexEdgePair<T> > qu;
+
+        qu.emplace(ver, ver, 0);
+
+        visited.clear();
+        
+        cout << "\n";
+        
+        while(!qu.empty()){
+            low_wt = qu.top();
+            qu.pop();
+            ver = low_wt.edge;
+            flag = 0;
+
+
+            if(visited.find(ver) != visited.end()){
+                continue;
+            }
+
+            cout << low_wt.vertex << " --- " << low_wt.edge << " costs " << low_wt.weight << "\n";
+            
+            min_cost += low_wt.weight;
+
+            visited[ver] = 1;
+
+            for(int i = 0; i < heads[ver].size(); i++){
+                y = heads[ver][i].first;
+
+                if(visited.find(y) == visited.end()){
+                    qu.emplace(ver, y, heads[ver][i].second);
+
+                }
+            }
+
+        }
+
+        cout << "\nMinimum Cost of tree using Prim's Algorithm is = " << min_cost << "\n\n";
     }
 };
 
 
 int main() {
 
-    DisjointSet<char> ds(10);
+    int ver;
+
+    Graph<int> gh;
+
+    // graph_ll.add_edge('A', 'B', 10);
+    // graph_ll.add_edge('A', 'C', 3);
+    // graph_ll.add_edge('B', 'C', 4);
+    // graph_ll.add_edge('B', 'D', 2);
+    // graph_ll.add_edge('C', 'D', 8);
+    // graph_ll.add_edge('C', 'E', 2);
+    // graph_ll.add_edge('D', 'E', 7);
+
+    gh.add_edge(0, 1, 4);
+    gh.add_edge(0, 7, 8);
+    gh.add_edge(1, 2, 8);
+    gh.add_edge(1, 7, 11);
+    gh.add_edge(2, 3, 7);
+    gh.add_edge(2, 5, 4);
+    gh.add_edge(2, 8, 2);
+    gh.add_edge(3, 4, 9);
+    gh.add_edge(3, 5, 14);
+    gh.add_edge(4, 5, 10);
+    gh.add_edge(5, 6, 2);
+    gh.add_edge(6, 8, 6);
+    gh.add_edge(6, 7, 1);
+    gh.add_edge(7, 8, 7);
 
 
-    vector<char> ver = { 'A', 'B', 'C', 'D', 'E' };
 
+    gh.print_graph_representation();
+    cout << "-------------------------\nApplying Kruskals algorithm on graph : \n";
+    gh.kruskals();
 
-    Graph<char> graph_ll(ver.size(), ver);
+    cout << "---------------------\nEnter vertex to start Prims algorithm from : ";
+    cin >> ver;
 
-    graph_ll.add_edge('A', 'B', 10);
-    graph_ll.add_edge('A', 'C', 3);
-    graph_ll.add_edge('B', 'C', 4);
-    graph_ll.add_edge('B', 'D', 2);
-    graph_ll.add_edge('C', 'D', 8);
-    graph_ll.add_edge('C', 'E', 2);
-    graph_ll.add_edge('D', 'E', 7);
-
-
-    graph_ll.print_graph_representation();
-    graph_ll.kruskals();
+    gh.prims(ver);
 
     return 0;
 }
